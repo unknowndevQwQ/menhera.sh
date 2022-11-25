@@ -203,7 +203,7 @@ menhera::install_software() {
                     preset_package="openssh"
                 ;;
             esac
-            chroot "${NEWROOT}" pacman -Syu --noconfirm "${preset_package}" "${ADDON_PACKAGE}"
+            chroot "${NEWROOT}" pacman -Syu --noconfirm "${preset_package}" ${ADDON_PACKAGE}
             chroot "${NEWROOT}" rm -rf /var/cache/pacman/pkg
         ;;
         'debian')
@@ -220,7 +220,7 @@ menhera::install_software() {
             
             DEBIAN_FRONTEND=noninteractive chroot "${NEWROOT}" apt-get update -y
             DEBIAN_FRONTEND=noninteractive chroot "${NEWROOT}" apt-get -o \
-                Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y "${preset_package}" "${ADDON_PACKAGE}"
+                Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y "${preset_package}" ${ADDON_PACKAGE}
         ;;
     esac
     [ "${SSHD}" = 'dropbear' ] && {
@@ -248,6 +248,7 @@ menhera::copy_config() {
     ! find "${NEWROOT}/root/.ssh" -type f -exec chmod 600 -- {} +
 
     chroot "${NEWROOT}" chsh -s /bin/bash root
+    chroot "${NEWROOT}" ln -frs /proc/self/mounts /etc/mtab
 
     cat > "${NEWROOT}/etc/motd" <<EOF
 
