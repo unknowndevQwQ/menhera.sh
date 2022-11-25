@@ -194,7 +194,7 @@ menhera::install_software() {
     >&2 echo "[*] Installing SSH Server into new rootfs..."
 
     case "${TEMP_ROOTFS_DISTRO}" in
-        'arch')
+        'archlinux')
             case "${SSHD}" in
                 'dropbear')
                     preset_package="dropbear openssh" # archlinux does not split server and client
@@ -223,7 +223,14 @@ menhera::install_software() {
                 Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" install -y "${preset_package}" "${ADDON_PACKAGE}"
         ;;
     esac
-
+    [ "${SSHD}" = 'dropbear' ] && {
+        # convert dropbear key format (if possible; only ed25519 is known to work)
+        mkdir -p "${NEWROOT}/etc/dropbear"
+        for i in "dsa rsa ecdsa ed25519"; do
+            [ -f "${OLDROOT}/etc/ssh/ssh_host_${i}_key" ] && ! chroot "${NEWROOT}" \
+                dropbearconvert openssh dropbear "/etc/ssh/ssh_host_${i}_key" "/etc/dropbear/dropbear_${i}_host_key"
+        done
+    }
     return 0
 }
 
@@ -233,16 +240,6 @@ menhera::copy_config() {
     ! cp -axr "${OLDROOT}/etc/ssh" "${NEWROOT}/etc"
     ! cp -ax "${OLDROOT}/etc/"{passwd,shadow} "${NEWROOT}/etc"
     ! cp -axr "${OLDROOT}/root/.ssh" "${NEWROOT}/root"
-
-    [ "${SSHD}" = 'dropbear' ] && {
-        # convert dropbear key format (if possible; only ed25519 is known to work)
-        mkdir -p "${NEWROOT}/etc/dropbear"
-        for i in "dsa rsa ecdsa ed25519"; do
-            [ -f "${OLDROOT}/etc/ssh/ssh_host_${i}_key" ] && ! chroot "${NEWROOT}" \
-                dropbearconvert openssh dropbear "/etc/ssh/ssh_host_${i}_key" "/etc/dropbear/dropbear_${i}_host_key"
-        done
-        ;;
-    }
 
     # fix SSH key files permission; otherwise OpenSSH server will refuse to start
     mkdir -p "${NEWROOT}/etc/ssh"
