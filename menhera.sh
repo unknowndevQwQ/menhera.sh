@@ -195,6 +195,9 @@ menhera::install_software() {
 
     case "${TEMP_ROOTFS_DISTRO}" in
         'archlinux')
+            for i in "dev proc"; do
+                [ -d "${OLDROOT}/$i" ] && mount --rbind "${OLDROOT}/$i" "${NEWROOT}/$i"
+            done
             case "${SSHD}" in
                 'dropbear')
                     preset_package="dropbear openssh" # archlinux does not split server and client
@@ -248,7 +251,6 @@ menhera::copy_config() {
     ! find "${NEWROOT}/root/.ssh" -type f -exec chmod 600 -- {} +
 
     chroot "${NEWROOT}" chsh -s /bin/bash root
-    chroot "${NEWROOT}" ln -frs /proc/self/mounts /etc/mtab
 
     cat > "${NEWROOT}/etc/motd" <<EOF
 
